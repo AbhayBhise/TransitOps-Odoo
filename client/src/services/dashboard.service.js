@@ -1,13 +1,13 @@
-import axios from 'axios';
+import api from '../config/api';
 
 export const dashboardService = {
   async getDashboardStats() {
-    const response = await axios.get('/api/reports/dashboard');
+    const response = await api.get('/dashboard');
     return response.data.data;
   },
 
   async getUtilizationTrend() {
-    const response = await axios.get('/api/reports/utilization');
+    const response = await api.get('/dashboard/utilization');
     return response.data.data;
   },
 };
