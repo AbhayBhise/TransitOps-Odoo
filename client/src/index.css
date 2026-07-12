@@ -129,3 +129,98 @@ body {
   box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary)) !important;
 }
 
+
+/* ==========================================================================
+   LIGHT MODE STYLING OVERRIDES (THEME SWITCHER)
+   ========================================================================== */
+
+.light-mode {
+  --background: 210 20% 98%;      /* Light background */
+  --foreground: 224 71% 4%;       /* Dark text */
+  --card: 0 0% 100%;              /* White cards */
+  --card-foreground: 224 71% 4%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+}
+
+.light-mode body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Override all slate background classes in light mode */
+.light-mode .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+.light-mode .bg-slate-900 {
+  background-color: #f1f5f9 !important;
+}
+.light-mode .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+.light-mode .bg-slate-950\/20 {
+  background-color: rgba(241, 245, 249, 0.5) !important;
+}
+.light-mode .bg-slate-950\/30 {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}
+.light-mode .bg-slate-950\/65 {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+}
+.light-mode .bg-slate-900\/60 {
+  background-color: rgba(226, 232, 240, 0.6) !important;
+}
+.light-mode .bg-slate-900\/40 {
+  background-color: rgba(226, 232, 240, 0.4) !important;
+}
+
+/* Override all slate text classes in light mode */
+.light-mode .text-slate-100 {
+  color: #0f172a !important;
+}
+.light-mode .text-slate-200 {
+  color: #1e293b !important;
+}
+.light-mode .text-slate-300 {
+  color: #334155 !important;
+}
+.light-mode .text-slate-400 {
+  color: #475569 !important;
+}
+.light-mode .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Override all slate border classes in light mode */
+.light-mode .border-slate-800,
+.light-mode .border-slate-700,
+.light-mode .border-slate-850,
+.light-mode .divide-slate-850 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #cbd5e1 !important;
+}
+
+/* Glassmorphism utility light mode */
+.light-mode .glass-panel {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+.light-mode .glass-panel-hover:hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Select option element overrides */
+.light-mode select,
+.light-mode input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Navbar / Sidebar overrides */
+.light-mode header,
+.light-mode aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
