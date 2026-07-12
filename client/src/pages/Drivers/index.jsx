@@ -18,11 +18,11 @@ const driverSchema = z.object({
   name: z.string().min(1, 'Driver Name is required'),
   licenseNumber: z
     .string()
-    .min(5, 'License Number must be at least 5 characters')
+    .min(6, 'License Number must be at least 6 characters')
     .max(30, 'License Number is too long')
     .regex(
-      /^[A-Z]{2}[-\s]?\d{2}[-\s]?\d{4,7}$/,
-      'Format: MH-12-12345678 or MH-12-1234567'
+      /^[A-Z0-9][-A-Z0-9\s]{4,28}$/,
+      'Only uppercase letters, numbers and dashes allowed (e.g. MH-12-12345678)'
     ),
   licenseCategory: z.string().min(1, 'License Category is required'),
   licenseExpiry: z
@@ -34,7 +34,7 @@ const driverSchema = z.object({
       const expiry = new Date(val);
       return expiry > today;
     }, {
-      message: 'License expiry date must be a future date',
+      message: 'License expiry must be a future date',
     }),
   phone: z.string().min(10, 'Contact number must be at least 10 digits'),
   safetyScore: z.coerce.number().min(0, 'Min score is 0').max(100, 'Max score is 100'),
@@ -293,7 +293,7 @@ export default function Drivers() {
             />
             {!errors.licenseNumber && (
               <p className="text-[10px] text-slate-500 mt-1 pl-1">
-                Format: State Code – RTO Code – Number (e.g. <span className="text-amber-500 font-mono">MH-12-12345678</span> or <span className="text-amber-500 font-mono">DL-04-20170012</span>)
+                Accepted: <span className="text-amber-500 font-mono">MH-12-12345678901</span> · <span className="text-amber-500 font-mono">DL-04-20170012345</span> (uppercase)
               </p>
             )}
           </div>
