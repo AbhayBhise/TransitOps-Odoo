@@ -76,6 +76,7 @@ model Vehicle {
   model              String
   year               Int
   status             VehicleStatus   @default(AVAILABLE)
+  capacity           Float           @default(0)
   trips              Trip[]
   maintenances       Maintenance[]
   fuelLogs           FuelLog[]
@@ -92,6 +93,7 @@ model Driver {
   licenseNumber String       @unique
   name          String
   status        DriverStatus @default(AVAILABLE)
+  licenseExpiry DateTime
   trips         Trip[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -109,6 +111,7 @@ model Trip {
   status      TripStatus @default(DRAFT)
   origin      String
   destination String
+  cargoWeight Float?
   startTime   DateTime?
   endTime     DateTime?
   createdAt   DateTime   @default(now())
