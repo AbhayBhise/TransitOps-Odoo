@@ -31,7 +31,19 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-slide-in: slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
 }
+
 
 :root {
   --background: 224 71% 4%;      /* Deep Slate/Zinc 950 */
