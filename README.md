@@ -177,10 +177,22 @@ Permissions are enforced at the API controller layer and reflected in the fronte
 
 ## 8. Installation & Setup Instructions
 
-### Prerequisites
-* **Node.js** (v18.x or v20.x recommended)
-* **npm** (v9.x or higher)
-* **PostgreSQL Database** (local instance or Neon cloud URL)
+### System Requirements & Prerequisites
+
+#### A. Hardware Prerequisites
+* **Processor**: Dual-Core 2.0 GHz CPU or faster.
+* **Memory**: Minimum 4 GB RAM (8 GB RAM recommended for local build execution).
+* **Storage**: 500 MB of available disk space for npm dependencies and local compilation.
+
+#### B. Software Prerequisites
+* **Operating System**: Windows 10/11, macOS 12.0+, or Linux (Ubuntu 20.04+, Debian 11+).
+* **Node.js**: Version `18.x` or `20.x` (LTS releases).
+* **Package Manager**: npm version `9.x` or higher.
+* **Database Engine**: PostgreSQL v14.x or higher (local instance or cloud database like Neon).
+
+#### C. Network & Client Browser
+* **Network**: Active broadband connection for connecting to the remote Render API and Vercel CDN.
+* **Client Browser**: Google Chrome (v100+), Safari (v15+), Mozilla Firefox (v98+), or Microsoft Edge (v100+).
 
 ### Step-by-Step Installation
 
