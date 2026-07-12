@@ -47,17 +47,30 @@ export function AuthProvider({ children }) {
 
       // Try cached user first
       const cachedUser = localStorage.getItem('transitops_user');
+      let cachedUserObj = null;
       if (cachedUser) {
         try {
-          setUser(JSON.parse(cachedUser));
-        } catch {}
+          const parsed = JSON.parse(cachedUser);
+          const validRoles = ['ADMIN', 'MANAGER', 'USER', 'DRIVER'];
+          if (parsed && validRoles.includes(parsed.role)) {
+            cachedUserObj = parsed;
+            setUser(parsed);
+          } else {
+            clearSession();
+            setLoading(false);
+            return;
+          }
+        } catch {
+          clearSession();
+          setLoading(false);
+          return;
+        }
       }
 
       try {
         const userData = await authService.getCurrentUser();
-        const cachedUserObj = cachedUser ? JSON.parse(cachedUser) : {};
         const mergedUser = {
-          name: cachedUserObj.name || 'User',
+          name: (cachedUserObj && cachedUserObj.name) || 'User',
           ...userData,
         };
         setUser(mergedUser);
