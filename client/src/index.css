@@ -109,3 +109,11 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 158, 11, 0.4);
 }
+
+/* Accessibility Focus Ring overrides */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary)) !important;
+}
+
