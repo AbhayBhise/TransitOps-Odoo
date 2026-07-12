@@ -9,6 +9,6 @@ router.use(verifyJWT);
 router.post('/', validate(vehicleSchema), createVehicle);
 router.get('/', getVehicles);
 router.get('/:id', getVehicle);
-router.patch('/:id', updateVehicle);
+router.put('/:id', updateVehicle);
 router.delete('/:id', deleteVehicle);
 export default router;

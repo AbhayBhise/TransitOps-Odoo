@@ -6,7 +6,7 @@ import { verifyJWT } from '../middleware/authMiddleware.js';
 
 const router = Router();
 router.use(verifyJWT);
-router.post('/open', validate(maintenanceSchema), openMaintenance);
-router.post('/:id/close', closeMaintenance);
+router.post('/', validate(maintenanceSchema), openMaintenance);
+router.patch('/:id/close', closeMaintenance);
 router.get('/', getMaintenances);
 export default router;

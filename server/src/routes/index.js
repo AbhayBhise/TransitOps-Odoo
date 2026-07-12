@@ -23,8 +23,8 @@ router.use('/vehicles', vehicleRoutes);
 router.use('/drivers', driverRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/trips', tripRoutes);
-router.use('/maintenances', maintenanceRoutes);
-router.use('/fuels', fuelRoutes);
+router.use('/maintenance', maintenanceRoutes);
+router.use('/fuel', fuelRoutes);
 router.use('/expenses', expenseRoutes);
 
 export default router;

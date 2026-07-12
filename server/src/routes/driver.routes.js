@@ -9,6 +9,6 @@ router.use(verifyJWT);
 router.post('/', validate(driverSchema), createDriver);
 router.get('/', getDrivers);
 router.get('/:id', getDriver);
-router.patch('/:id', updateDriver);
+router.put('/:id', updateDriver);
 router.delete('/:id', deleteDriver);
 export default router;
