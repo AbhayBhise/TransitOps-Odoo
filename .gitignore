@@ -25,4 +25,5 @@ Thumbs.db
 *.pdf
 *.png
 *.svg
+!client/public/*.svg
 *.txt

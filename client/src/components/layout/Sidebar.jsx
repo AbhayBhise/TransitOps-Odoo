@@ -34,8 +34,11 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-5 border-b border-slate-800 bg-slate-950 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="p-2 bg-amber-500 rounded-lg text-slate-950 shadow-md shadow-amber-500/10 shrink-0">
-            <ShieldCheck size={20} />
+          <div className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg shadow-md shrink-0 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" className="shrink-0">
+              <path d="M5 4 L13 12 L5 20" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M11 4 L19 12 L11 20" fill="none" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
           {(!isCollapsed || isMobileOpen) && (
             <span className="text-base font-extrabold uppercase tracking-widest text-slate-100 font-mono">
