@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import EmptyState from '../ui/EmptyState';
-import { ChevronLeft, ChevronRight, Search, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Plus, X } from 'lucide-react';
 
 export default function DataTable({
   columns = [],
@@ -35,10 +35,15 @@ export default function DataTable({
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-4">
       {/* Search / Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-950/20 p-4 rounded-xl border border-slate-800 glass-panel">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-950/20 p-4 rounded-xl border border-slate-800 glass-panel animate-fade-in">
         {searchKey ? (
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
@@ -50,8 +55,19 @@ export default function DataTable({
                 setCurrentPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all focus:ring-offset-0"
+              aria-label={searchPlaceholder}
+              className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-0.5 rounded cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex-1" />
@@ -60,7 +76,7 @@ export default function DataTable({
         {onAddClick && (
           <button
             onClick={onAddClick}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 active:scale-95 rounded-lg transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] rounded-lg transition-all shadow-lg shadow-amber-500/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
           >
             <Plus size={15} />
             {addText}
@@ -77,7 +93,7 @@ export default function DataTable({
             onAddClick && (
               <button
                 onClick={onAddClick}
-                className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer"
+                className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
               >
                 {addText}
               </button>
@@ -85,7 +101,7 @@ export default function DataTable({
           }
         />
       ) : (
-        <div className="border border-slate-800 rounded-xl bg-slate-950/30 glass-panel flex flex-col">
+        <div className="border border-slate-800 rounded-xl bg-slate-950/30 glass-panel flex flex-col transition-all duration-300">
           <div className="overflow-x-auto w-full">
             <div className="inline-block min-w-full align-middle">
               <div className="overflow-hidden">
@@ -107,7 +123,7 @@ export default function DataTable({
                     {paginatedData.map((row, rowIndex) => (
                       <tr
                         key={row.id || rowIndex}
-                        className="hover:bg-slate-900/40 transition-colors"
+                        className="hover:bg-slate-900/40 transition-colors focus-within:bg-slate-900/20"
                       >
                         {columns.map((col) => (
                           <td key={col.key} className="px-6 py-4 text-sm text-slate-300 truncate">
@@ -130,9 +146,11 @@ export default function DataTable({
               </span>
               <div className="flex items-center gap-2 order-1 sm:order-2">
                 <button
+                  type="button"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  aria-label="Previous page"
+                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -140,9 +158,11 @@ export default function DataTable({
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  aria-label="Next page"
+                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
                 >
                   <ChevronRight size={16} />
                 </button>

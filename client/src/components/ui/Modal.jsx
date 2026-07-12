@@ -28,7 +28,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm"
+    >
       <div
         className="fixed inset-0 transition-opacity"
         onClick={onClose}
@@ -38,10 +43,16 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-950/50 shrink-0">
-          <h3 className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-wide truncate pr-4">{title}</h3>
+          <h3
+            id="modal-title"
+            className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-wide truncate pr-4"
+          >
+            {title}
+          </h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-colors cursor-pointer"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
           >
             <X size={16} />
           </button>
