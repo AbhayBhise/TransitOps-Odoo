@@ -1,25 +1,36 @@
-import api from '../config/api';
-
-const RESOURCE = '/settings';
-
 export const settingsService = {
   async getProfile() {
-    const response = await api.get(`${RESOURCE}/profile`);
-    return response.data.data;
+    const cached = localStorage.getItem('transitops_profile');
+    return cached ? JSON.parse(cached) : {};
   },
 
   async updateProfile(data) {
-    const response = await api.put(`${RESOURCE}/profile`, data);
-    return response.data.data;
+    localStorage.setItem('transitops_profile', JSON.stringify(data));
+    return data;
   },
 
   async getPreferences() {
-    const response = await api.get(`${RESOURCE}/preferences`);
-    return response.data.data;
+    const cached = localStorage.getItem('transitops_preferences');
+    return cached ? JSON.parse(cached) : null;
   },
 
   async updatePreferences(data) {
-    const response = await api.put(`${RESOURCE}/preferences`, data);
-    return response.data.data;
+    localStorage.setItem('transitops_preferences', JSON.stringify(data));
+    
+    // Synchronize the darkTheme preference with the global document root class
+    if (data && typeof data.darkTheme === 'boolean') {
+      const root = document.documentElement;
+      if (data.darkTheme) {
+        root.classList.remove('light-mode');
+        root.classList.add('dark-mode');
+        localStorage.setItem('transitops_theme', 'dark');
+      } else {
+        root.classList.remove('dark-mode');
+        root.classList.add('light-mode');
+        localStorage.setItem('transitops_theme', 'light');
+      }
+    }
+
+    return data;
   },
 };

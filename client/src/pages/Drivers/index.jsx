@@ -140,6 +140,10 @@ export default function Drivers() {
 
   // Save Driver
   const onSave = (data) => {
+    const payload = {
+      ...data,
+      licenseExpiry: new Date(data.licenseExpiry).toISOString(),
+    };
     if (editingDriver) {
       // Update
       const isDuplicate = drivers.some(
@@ -151,7 +155,7 @@ export default function Drivers() {
         toast.error('License number must be unique');
         return;
       }
-      updateMutation.mutate({ id: editingDriver.id, data });
+      updateMutation.mutate({ id: editingDriver.id, data: payload });
     } else {
       // Create
       const isDuplicate = drivers.some(
@@ -161,7 +165,7 @@ export default function Drivers() {
         toast.error('License number must be unique');
         return;
       }
-      createMutation.mutate(data);
+      createMutation.mutate(payload);
     }
     setIsModalOpen(false);
   };

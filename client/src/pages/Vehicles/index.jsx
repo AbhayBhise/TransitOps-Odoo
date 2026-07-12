@@ -18,7 +18,7 @@ const vehicleSchema = z.object({
   registrationNumber: z
     .string()
     .min(1, 'Registration Number is required')
-    .regex(/^[A-Z]{2}-\d{2}-[A-Z]{1,2}-\d{4}$/, 'Format must match: MH-12-GQ-4819'),
+    .regex(/^[A-Z0-9][-A-Z0-9\s]{4,28}$/, 'Format: MH-12-GQ-4819 (uppercase alphanumeric and dashes only)'),
   model: z.string().min(1, 'Vehicle Model is required'),
   type: z.string().min(1, 'Vehicle Type is required'),
   capacity: z.coerce.number().positive('Capacity must be a positive number'),
@@ -119,6 +119,12 @@ export default function Vehicles() {
 
   // Save Vehicle
   const onSave = (data) => {
+    const payload = {
+      ...data,
+      make: data.model ? data.model.split(' ')[0] : 'Fleet',
+      year: 2026,
+      capacity: Number(data.capacity),
+    };
     if (editingVehicle) {
       // Update
       const isDuplicate = vehicles.some(
@@ -130,7 +136,7 @@ export default function Vehicles() {
         toast.error('Registration number must be unique');
         return;
       }
-      updateMutation.mutate({ id: editingVehicle.id, data });
+      updateMutation.mutate({ id: editingVehicle.id, data: payload });
     } else {
       // Create
       const isDuplicate = vehicles.some(
@@ -140,7 +146,7 @@ export default function Vehicles() {
         toast.error('Registration number must be unique');
         return;
       }
-      createMutation.mutate(data);
+      createMutation.mutate(payload);
     }
     setIsModalOpen(false);
   };
