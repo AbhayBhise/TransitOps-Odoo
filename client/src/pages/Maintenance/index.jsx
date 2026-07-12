@@ -1,81 +1,129 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/ui/PageHeader';
 import DataTable from '../../components/tables/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Modal from '../../components/ui/Modal';
 import MaintenanceForm from '../../components/forms/MaintenanceForm';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { maintenanceService } from '../../services/maintenance.service';
+import { toast } from 'react-hot-toast';
 
-const REALISTIC_MAINTENANCE = [
-  { id: 1, vehicle: 'Van-05', issue: 'Engine Oil & Filter Change', status: 'In Shop', cost: 120, date: '2026-07-12', history: 'Routine 10k mile maintenance.' },
-  { id: 2, vehicle: 'Truck-02', issue: 'Brake Pad Replacement', status: 'Completed', cost: 450, date: '2026-06-25', history: 'Front brake pads were completely worn out.' },
-  { id: 3, vehicle: 'Van-12', issue: 'Transmission Fluid Flush', status: 'Completed', cost: 200, date: '2026-05-14', history: 'Preventative maintenance.' },
-  { id: 4, vehicle: 'Truck-08', issue: 'Tire Alignment & Rotation', status: 'In Shop', cost: 300, date: '2026-07-11', history: 'Driver reported pulling to the left.' },
+const INITIAL_MAINTENANCE = [
+  { id: 'mnt-1', vehicleNo: 'KA-03-MP-3311', vehicle: { registrationNumber: 'KA-03-MP-3311' }, issue: 'Engine Oil & Filter Change', status: 'OPEN', cost: 120, createdAt: '2026-07-12' },
+  { id: 'mnt-2', vehicleNo: 'MH-12-GQ-4819', vehicle: { registrationNumber: 'MH-12-GQ-4819' }, issue: 'Brake Pad Replacement', status: 'CLOSED', cost: 450, createdAt: '2026-06-25' },
+  { id: 'mnt-3', vehicleNo: 'DL-01-AX-9922', vehicle: { registrationNumber: 'DL-01-AX-9922' }, issue: 'Transmission Fluid Flush', status: 'CLOSED', cost: 200, createdAt: '2026-05-14' },
+  { id: 'mnt-4', vehicleNo: 'HR-26-CK-1234', vehicle: { registrationNumber: 'HR-26-CK-1234' }, issue: 'Tire Alignment & Rotation', status: 'OPEN', cost: 300, createdAt: '2026-07-11' },
 ];
 
 export default function MaintenancePlaceholder() {
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [records, setRecords] = useState(REALISTIC_MAINTENANCE);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  const { data: queryRecords = INITIAL_MAINTENANCE } = useQuery({
+    queryKey: ['maintenance'],
+    queryFn: async () => {
+      try {
+        const res = await maintenanceService.getMaintenance();
+        return res && res.length > 0 ? res : INITIAL_MAINTENANCE;
+      } catch (err) {
+        console.warn('Backend getMaintenance API offline. Using mock data.', err);
+        return INITIAL_MAINTENANCE;
+      }
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  const [records, setRecords] = useState(queryRecords);
+  useEffect(() => { setRecords(queryRecords); }, [queryRecords]);
+
+  const createMutation = useMutation({
+    mutationFn: maintenanceService.createMaintenance,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      toast.success('Maintenance logged successfully');
+    },
+    onError: (err, variables) => {
+      const newRecord = { id: `mnt-${Date.now()}`, ...variables, status: 'OPEN', createdAt: new Date().toISOString().split('T')[0] };
+      setRecords((prev) => [newRecord, ...prev]);
+      toast.success('Maintenance logged (Local Simulation)');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => maintenanceService.updateMaintenance(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      toast.success('Maintenance record updated');
+    },
+    onError: (err, variables) => {
+      setRecords((prev) => prev.map((r) => (r.id === variables.id ? { ...r, ...variables.data } : r)));
+      toast.success('Maintenance updated (Local Simulation)');
+    },
+  });
+
   const handleAddMaintenance = (data) => {
-    const newRecord = {
-      id: records.length + 1,
-      vehicle: data.vehicleId === 'v1' ? 'Van-05' : 'Truck-02', 
+    createMutation.mutate({
+      vehicleId: data.vehicleId,
       issue: data.issue,
-      status: 'In Shop',
-      cost: data.cost,
-      date: new Date().toISOString().split('T')[0],
-      history: 'Newly added log.',
-    };
-    setRecords([...records, newRecord]);
+      cost: Number(data.cost),
+      vehicleNo: data.vehicleId === 'v1' ? 'KA-03-MP-3311' : 'MH-12-GQ-4819',
+    });
     setIsModalOpen(false);
   };
 
+  const handleClose = (record) => {
+    updateMutation.mutate({ id: record.id, data: { status: 'CLOSED' } });
+    setSelectedRecord(null);
+  };
+
   const columns = [
-    { key: 'id', title: 'Record ID', render: (row) => <span className="font-medium text-slate-200">MNT-{String(row.id).padStart(3, '0')}</span> },
-    { key: 'vehicle', title: 'Vehicle' },
-    { key: 'issue', title: 'Issue Description', render: (row) => <div className="max-w-[250px] truncate">{row.issue}</div> },
-    { key: 'date', title: 'Date Logged' },
-    { key: 'status', title: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-    { key: 'actions', title: 'Actions', render: (row) => (
-      <button 
+    { key: 'id', title: 'Record ID', width: '12%', render: (row) => <span className="font-mono font-bold text-slate-200">{typeof row.id === 'string' ? row.id.toUpperCase() : `MNT-${String(row.id).padStart(3, '0')}`}</span> },
+    { key: 'vehicleNo', title: 'Vehicle', width: '18%', render: (row) => row.vehicle?.registrationNumber || row.vehicleNo || '-' },
+    { key: 'issue', title: 'Issue', width: '28%', render: (row) => <div className="max-w-[250px] truncate">{row.issue}</div> },
+    { key: 'createdAt', title: 'Date', width: '12%', render: (row) => row.createdAt?.split('T')[0] || '-' },
+    { key: 'cost', title: 'Cost', width: '10%', render: (row) => <span className="text-amber-500 font-medium">${Number(row.cost).toLocaleString()}</span> },
+    { key: 'status', title: 'Status', width: '12%', render: (row) => <StatusBadge status={row.status} /> },
+    { key: 'actions', title: '', width: '8%', render: (row) => (
+      <button
         onClick={() => setSelectedRecord(row)}
-        className="text-amber-500 hover:text-amber-400 text-xs uppercase font-bold tracking-wider"
+        className="text-amber-500 hover:text-amber-400 text-xs uppercase font-bold tracking-wider cursor-pointer"
       >
-        View History
+        View
       </button>
-    )}
+    )},
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
-      <PageHeader 
-        title="Fleet Maintenance" 
+    <div className="space-y-6">
+      <PageHeader
+        title="Fleet Maintenance"
         subtitle="Track vehicle repairs, service histories, and maintenance costs."
       />
 
-      <DataTable 
+      <DataTable
         columns={columns}
         data={records}
-        searchKey="vehicle"
-        searchPlaceholder="Search by vehicle identifier..."
+        searchKey="issue"
+        searchPlaceholder="Search by issue description..."
         onAddClick={() => setIsModalOpen(true)}
         addText="Log Maintenance"
-        emptyTitle="No Maintenance Logs Found"
-        emptyDescription="Get started by logging maintenance."
+        emptyTitle="No Maintenance Logs"
+        emptyDescription="Get started by logging a maintenance record."
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log Maintenance" size="md">
         <MaintenanceForm onSubmit={handleAddMaintenance} onCancel={() => setIsModalOpen(false)} />
       </Modal>
 
-      <Modal isOpen={!!selectedRecord} onClose={() => setSelectedRecord(null)} title="Maintenance History" size="md">
+      <Modal isOpen={!!selectedRecord} onClose={() => setSelectedRecord(null)} title="Maintenance Details" size="md">
         {selectedRecord && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-4">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Vehicle</p>
-                <p className="text-lg font-bold text-slate-100">{selectedRecord.vehicle}</p>
+                <p className="text-lg font-bold text-slate-100">{selectedRecord.vehicle?.registrationNumber || selectedRecord.vehicleNo}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Status</p>
@@ -83,34 +131,24 @@ export default function MaintenancePlaceholder() {
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Date</p>
-                <p className="text-slate-200">{selectedRecord.date}</p>
+                <p className="text-slate-200">{selectedRecord.createdAt?.split('T')[0]}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cost</p>
-                <p className="text-slate-200 text-amber-500 font-bold">${selectedRecord.cost}</p>
+                <p className="text-amber-500 font-bold">${Number(selectedRecord.cost).toLocaleString()}</p>
               </div>
             </div>
-
             <div>
               <h4 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-2">Issue Description</h4>
               <p className="text-slate-300 p-3 bg-slate-900 border border-slate-800 rounded-lg">{selectedRecord.issue}</p>
             </div>
-
-            <div>
-              <h4 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-2">Mechanic Notes / History</h4>
-              <p className="text-slate-400 p-3 bg-slate-900 border border-slate-800 rounded-lg text-sm italic">{selectedRecord.history}</p>
-            </div>
-
-            {selectedRecord.status === 'In Shop' && (
-              <div className="flex justify-end pt-4 border-t border-slate-800 mt-4">
-                <button 
-                  onClick={() => {
-                    setRecords(records.map(r => r.id === selectedRecord.id ? { ...r, status: 'Completed' } : r));
-                    setSelectedRecord(null);
-                  }}
-                  className="px-4 py-2 bg-amber-500 text-slate-950 text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-amber-600 transition"
+            {selectedRecord.status === 'OPEN' && (
+              <div className="flex justify-end pt-4 border-t border-slate-800">
+                <button
+                  onClick={() => handleClose(selectedRecord)}
+                  className="px-4 py-2 bg-amber-500 text-slate-950 text-sm font-bold uppercase tracking-wider rounded-lg hover:bg-amber-600 transition cursor-pointer"
                 >
-                  Mark as Completed
+                  Close Maintenance
                 </button>
               </div>
             )}
