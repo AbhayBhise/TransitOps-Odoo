@@ -37,6 +37,7 @@ export default function TripsPlaceholder() {
     const dObj = drivers.find(d => d.id === t.driverId);
     return {
       ...t,
+      source: t.origin || t.source || 'N/A',
       vehicleNo: vObj?.registrationNumber || 'N/A',
       driverName: dObj?.name || 'N/A'
     };
@@ -70,14 +71,11 @@ export default function TripsPlaceholder() {
 
   const handleAddTrip = (data) => {
     createMutation.mutate({
-      source: data.source,
+      origin: data.source,
       destination: data.destination,
       vehicleId: data.vehicleId,
       driverId: data.driverId,
       cargoWeight: Number(data.cargoWeight),
-      plannedDistance: Number(data.plannedDistance),
-      vehicleNo: 'Assigned',
-      driverName: 'Assigned',
     });
     setIsModalOpen(false);
   };

@@ -19,7 +19,16 @@ export const tripService = {
   },
 
   async updateTrip(id, tripData) {
-    const response = await api.put(`${RESOURCE}/${id}`, tripData);
+    // Map status transition to the correct PATCH endpoints expected by the backend
+    let url = `${RESOURCE}/${id}`;
+    if (tripData.status === 'DISPATCHED') {
+      url = `${RESOURCE}/${id}/dispatch`;
+    } else if (tripData.status === 'COMPLETED') {
+      url = `${RESOURCE}/${id}/complete`;
+    } else if (tripData.status === 'CANCELLED') {
+      url = `${RESOURCE}/${id}/cancel`;
+    }
+    const response = await api.patch(url, tripData);
     return response.data.data;
   },
 };
