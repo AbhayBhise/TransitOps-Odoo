@@ -11,6 +11,7 @@ import MaintenancePlaceholder from './pages/Maintenance';
 import FuelPlaceholder from './pages/Fuel';
 import ReportsPlaceholder from './pages/Reports';
 import SettingsPlaceholder from './pages/Settings';
+import Profile from './pages/Profile';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/fuel" element={<FuelPlaceholder />} />
             <Route path="/reports" element={<ReportsPlaceholder />} />
             <Route path="/settings" element={<SettingsPlaceholder />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </AppLayout>

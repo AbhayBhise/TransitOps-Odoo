@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ShieldCheck,
   X,
+  User,
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
   { path: '/fuel', label: 'Fuel & Expenses', icon: Fuel },
   { path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/profile', label: 'Profile', icon: User },
 ];
 
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
