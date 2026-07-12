@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/ui/PageHeader';
 import DataTable from '../../components/tables/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -8,6 +8,8 @@ import { Input, Select } from '../../components/ui/FormComponents';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { driverService } from '../../services/driver.service';
 import { INITIAL_DRIVERS } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
 import { Edit2, Trash2 } from 'lucide-react';
@@ -27,7 +29,7 @@ const driverSchema = z.object({
 });
 
 export default function Drivers() {
-  const [drivers, setDrivers] = useState(INITIAL_DRIVERS);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [deletingDriverId, setDeletingDriverId] = useState(null);
@@ -38,6 +40,72 @@ export default function Drivers() {
   const isLicenseExpired = (expiryDate) => {
     return new Date(expiryDate) < new Date(TODAY);
   };
+
+  // Query Drivers with fallback to mock data
+  const { data: queryDrivers = INITIAL_DRIVERS, isLoading } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: async () => {
+      try {
+        const res = await driverService.getDrivers();
+        return res && res.length > 0 ? res : INITIAL_DRIVERS;
+      } catch (err) {
+        console.warn('Backend getDrivers API offline. Simulating with mock data.', err);
+        return INITIAL_DRIVERS;
+      }
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  // Local fallback state to support mutations offline
+  const [drivers, setDrivers] = useState(queryDrivers);
+
+  useEffect(() => {
+    setDrivers(queryDrivers);
+  }, [queryDrivers]);
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: driverService.createDriver,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      toast.success('Driver profile created successfully');
+    },
+    onError: (err, variables) => {
+      // Local fallback simulation
+      const newDriver = { id: `drv-${Date.now()}`, ...variables };
+      setDrivers((prev) => [newDriver, ...prev]);
+      toast.success('Driver registered (Local Simulation)');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => driverService.updateDriver(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      toast.success('Driver updated successfully');
+    },
+    onError: (err, variables) => {
+      // Local fallback simulation
+      setDrivers((prev) =>
+        prev.map((d) => (d.id === variables.id ? { ...d, ...variables.data } : d))
+      );
+      toast.success('Driver updated (Local Simulation)');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: driverService.deleteDriver,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      toast.success('Driver profile deleted successfully');
+    },
+    onError: (err, id) => {
+      // Local fallback simulation
+      setDrivers((prev) => prev.filter((d) => d.id !== id));
+      toast.success('Driver deregistered (Local Simulation)');
+    },
+  });
 
   // Initialize react-hook-form
   const {
@@ -93,10 +161,7 @@ export default function Drivers() {
         toast.error('License number must be unique');
         return;
       }
-      setDrivers((prev) =>
-        prev.map((d) => (d.id === editingDriver.id ? { ...d, ...data } : d))
-      );
-      toast.success('Driver updated successfully');
+      updateMutation.mutate({ id: editingDriver.id, data });
     } else {
       // Create
       const isDuplicate = drivers.some(
@@ -106,21 +171,17 @@ export default function Drivers() {
         toast.error('License number must be unique');
         return;
       }
-      const newDriver = {
-        id: `drv-${Date.now()}`,
-        ...data,
-      };
-      setDrivers((prev) => [newDriver, ...prev]);
-      toast.success('Driver profile created successfully');
+      createMutation.mutate(data);
     }
     setIsModalOpen(false);
   };
 
   // Confirm Delete
   const handleConfirmDelete = () => {
-    setDrivers((prev) => prev.filter((d) => d.id !== deletingDriverId));
-    toast.success('Driver profile deleted successfully');
-    setDeletingDriverId(null);
+    if (deletingDriverId) {
+      deleteMutation.mutate(deletingDriverId);
+      setDeletingDriverId(null);
+    }
   };
 
   const columns = [
@@ -292,7 +353,8 @@ export default function Drivers() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             >
               {editingDriver ? 'Update Driver' : 'Add Driver'}
             </button>

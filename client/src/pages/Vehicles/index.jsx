@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/ui/PageHeader';
 import DataTable from '../../components/tables/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -8,6 +8,8 @@ import { Input, Select } from '../../components/ui/FormComponents';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { vehicleService } from '../../services/vehicle.service';
 import { INITIAL_VEHICLES } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
 import { Edit2, Trash2 } from 'lucide-react';
@@ -27,10 +29,76 @@ const vehicleSchema = z.object({
 });
 
 export default function Vehicles() {
-  const [vehicles, setVehicles] = useState(INITIAL_VEHICLES);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [deletingVehicleId, setDeletingVehicleId] = useState(null);
+
+  // Query Vehicles with fallback to mock data
+  const { data: queryVehicles = INITIAL_VEHICLES, isLoading } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: async () => {
+      try {
+        const res = await vehicleService.getVehicles();
+        return res && res.length > 0 ? res : INITIAL_VEHICLES;
+      } catch (err) {
+        console.warn('Backend getVehicles API offline. Simulating with mock data.', err);
+        return INITIAL_VEHICLES;
+      }
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  // Local fallback state to support mutations offline
+  const [vehicles, setVehicles] = useState(queryVehicles);
+
+  useEffect(() => {
+    setVehicles(queryVehicles);
+  }, [queryVehicles]);
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: vehicleService.createVehicle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Vehicle registered successfully');
+    },
+    onError: (err, variables) => {
+      // Local fallback simulation
+      const newVehicle = { id: `veh-${Date.now()}`, ...variables };
+      setVehicles((prev) => [newVehicle, ...prev]);
+      toast.success('Vehicle registered (Local Simulation)');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => vehicleService.updateVehicle(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Vehicle updated successfully');
+    },
+    onError: (err, variables) => {
+      // Local fallback simulation
+      setVehicles((prev) =>
+        prev.map((v) => (v.id === variables.id ? { ...v, ...variables.data } : v))
+      );
+      toast.success('Vehicle updated (Local Simulation)');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: vehicleService.deleteVehicle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Vehicle deleted successfully');
+    },
+    onError: (err, id) => {
+      // Local fallback simulation
+      setVehicles((prev) => prev.filter((v) => v.id !== id));
+      toast.success('Vehicle deregistered (Local Simulation)');
+    },
+  });
 
   // Initialize react-hook-form
   const {
@@ -86,10 +154,7 @@ export default function Vehicles() {
         toast.error('Registration number must be unique');
         return;
       }
-      setVehicles((prev) =>
-        prev.map((v) => (v.id === editingVehicle.id ? { ...v, ...data } : v))
-      );
-      toast.success('Vehicle updated successfully');
+      updateMutation.mutate({ id: editingVehicle.id, data });
     } else {
       // Create
       const isDuplicate = vehicles.some(
@@ -99,21 +164,17 @@ export default function Vehicles() {
         toast.error('Registration number must be unique');
         return;
       }
-      const newVehicle = {
-        id: `veh-${Date.now()}`,
-        ...data,
-      };
-      setVehicles((prev) => [newVehicle, ...prev]);
-      toast.success('Vehicle added successfully');
+      createMutation.mutate(data);
     }
     setIsModalOpen(false);
   };
 
   // Confirm Delete
   const handleConfirmDelete = () => {
-    setVehicles((prev) => prev.filter((v) => v.id !== deletingVehicleId));
-    toast.success('Vehicle deleted successfully');
-    setDeletingVehicleId(null);
+    if (deletingVehicleId) {
+      deleteMutation.mutate(deletingVehicleId);
+      setDeletingVehicleId(null);
+    }
   };
 
   const columns = [
@@ -266,7 +327,8 @@ export default function Vehicles() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             >
               {editingVehicle ? 'Update Vehicle' : 'Register Vehicle'}
             </button>

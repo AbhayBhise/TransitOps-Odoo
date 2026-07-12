@@ -21,13 +21,46 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { vehicleService } from '../../services/vehicle.service';
+import { driverService } from '../../services/driver.service';
 import { INITIAL_VEHICLES, INITIAL_DRIVERS, RECENT_TRIPS, CHART_UTILIZATION } from '../../utils/mockData';
 
 export default function Dashboard() {
-  const [vehicles] = useState(INITIAL_VEHICLES);
-  const [drivers] = useState(INITIAL_DRIVERS);
   const [trips] = useState(RECENT_TRIPS);
   const [selectedType, setSelectedType] = useState('ALL');
+
+  // Fetch vehicles with fallback to mock data
+  const { data: vehicles = INITIAL_VEHICLES, isLoading: vehiclesLoading } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: async () => {
+      try {
+        const res = await vehicleService.getVehicles();
+        return res && res.length > 0 ? res : INITIAL_VEHICLES;
+      } catch (err) {
+        console.warn('Backend API offline or returned error. Using mock vehicles data.', err);
+        return INITIAL_VEHICLES;
+      }
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  // Fetch drivers with fallback to mock data
+  const { data: drivers = INITIAL_DRIVERS, isLoading: driversLoading } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: async () => {
+      try {
+        const res = await driverService.getDrivers();
+        return res && res.length > 0 ? res : INITIAL_DRIVERS;
+      } catch (err) {
+        console.warn('Backend API offline or returned error. Using mock drivers data.', err);
+        return INITIAL_DRIVERS;
+      }
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 
   // Compute KPIs
   const totalVehicles = vehicles.length;
@@ -50,6 +83,8 @@ export default function Dashboard() {
     { name: 'On Trip', value: activeVehicles, color: '#0ea5e9' },
     { name: 'In Shop', value: maintenanceVehicles, color: '#f59e0b' },
   ];
+
+  const isLoading = vehiclesLoading || driversLoading;
 
   return (
     <div className="space-y-6">
@@ -82,6 +117,7 @@ export default function Dashboard() {
           icon={Truck}
           trend="8.3%"
           trendDirection="up"
+          isLoading={isLoading}
         />
         <KPICard
           title="Available Drivers"
@@ -89,6 +125,7 @@ export default function Dashboard() {
           icon={Users}
           trend="4.2%"
           trendDirection="up"
+          isLoading={isLoading}
         />
         <KPICard
           title="Active Trips"
@@ -96,6 +133,7 @@ export default function Dashboard() {
           icon={Compass}
           trend="12.5%"
           trendDirection="up"
+          isLoading={isLoading}
         />
         <KPICard
           title="Fleet Utilization"
@@ -103,6 +141,7 @@ export default function Dashboard() {
           icon={TrendingUp}
           trend="2.4%"
           trendDirection="up"
+          isLoading={isLoading}
         />
       </div>
 
