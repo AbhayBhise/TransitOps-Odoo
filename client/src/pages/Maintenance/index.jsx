@@ -6,37 +6,32 @@ import Modal from '../../components/ui/Modal';
 import MaintenanceForm from '../../components/forms/MaintenanceForm';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { maintenanceService } from '../../services/maintenance.service';
+import { vehicleService } from '../../services/vehicle.service';
 import { toast } from 'react-hot-toast';
-
-const INITIAL_MAINTENANCE = [
-  { id: 'mnt-1', vehicleNo: 'KA-03-MP-3311', vehicle: { registrationNumber: 'KA-03-MP-3311' }, issue: 'Engine Oil & Filter Change', status: 'OPEN', cost: 120, createdAt: '2026-07-12' },
-  { id: 'mnt-2', vehicleNo: 'MH-12-GQ-4819', vehicle: { registrationNumber: 'MH-12-GQ-4819' }, issue: 'Brake Pad Replacement', status: 'CLOSED', cost: 450, createdAt: '2026-06-25' },
-  { id: 'mnt-3', vehicleNo: 'DL-01-AX-9922', vehicle: { registrationNumber: 'DL-01-AX-9922' }, issue: 'Transmission Fluid Flush', status: 'CLOSED', cost: 200, createdAt: '2026-05-14' },
-  { id: 'mnt-4', vehicleNo: 'HR-26-CK-1234', vehicle: { registrationNumber: 'HR-26-CK-1234' }, issue: 'Tire Alignment & Rotation', status: 'OPEN', cost: 300, createdAt: '2026-07-11' },
-];
 
 export default function MaintenancePlaceholder() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
-  const { data: queryRecords = INITIAL_MAINTENANCE } = useQuery({
+  const { data: queryRecords = [] } = useQuery({
     queryKey: ['maintenance'],
-    queryFn: async () => {
-      try {
-        const res = await maintenanceService.getMaintenance();
-        return res && res.length > 0 ? res : INITIAL_MAINTENANCE;
-      } catch (err) {
-        console.warn('Backend getMaintenance API offline. Using mock data.', err);
-        return INITIAL_MAINTENANCE;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => maintenanceService.getMaintenance(),
   });
 
-  const [records, setRecords] = useState(queryRecords);
-  useEffect(() => { setRecords(queryRecords); }, [queryRecords]);
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => vehicleService.getVehicles(),
+  });
+
+  const records = queryRecords.map(r => {
+    const vObj = vehicles.find(v => v.id === r.vehicleId);
+    return {
+      ...r,
+      issue: r.description || r.issue || 'No Description',
+      vehicleNo: vObj?.registrationNumber || 'N/A'
+    };
+  });
 
   const createMutation = useMutation({
     mutationFn: maintenanceService.createMaintenance,
@@ -44,10 +39,9 @@ export default function MaintenancePlaceholder() {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       toast.success('Maintenance logged successfully');
     },
-    onError: (err, variables) => {
-      const newRecord = { id: `mnt-${Date.now()}`, ...variables, status: 'OPEN', createdAt: new Date().toISOString().split('T')[0] };
-      setRecords((prev) => [newRecord, ...prev]);
-      toast.success('Maintenance logged (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to log maintenance';
+      toast.error(msg);
     },
   });
 
@@ -57,24 +51,24 @@ export default function MaintenancePlaceholder() {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       toast.success('Maintenance record updated');
     },
-    onError: (err, variables) => {
-      setRecords((prev) => prev.map((r) => (r.id === variables.id ? { ...r, ...variables.data } : r)));
-      toast.success('Maintenance updated (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to update maintenance';
+      toast.error(msg);
     },
   });
 
   const handleAddMaintenance = (data) => {
     createMutation.mutate({
       vehicleId: data.vehicleId,
-      issue: data.issue,
+      description: data.issue || data.description,
       cost: Number(data.cost),
-      vehicleNo: data.vehicleId === 'v1' ? 'KA-03-MP-3311' : 'MH-12-GQ-4819',
+      date: new Date().toISOString(),
     });
     setIsModalOpen(false);
   };
 
   const handleClose = (record) => {
-    updateMutation.mutate({ id: record.id, data: { status: 'CLOSED' } });
+    updateMutation.mutate({ id: record.id, data: { status: 'COMPLETED' } });
     setSelectedRecord(null);
   };
 

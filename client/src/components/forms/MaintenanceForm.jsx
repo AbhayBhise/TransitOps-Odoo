@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input, Select, Textarea } from '../ui/FormComponents';
+import { useQuery } from '@tanstack/react-query';
+import { vehicleService } from '../../services/vehicle.service';
 
 const maintenanceSchema = z.object({
   vehicleId: z.string().min(1, 'Please select a vehicle'),
@@ -20,10 +22,14 @@ export default function MaintenanceForm({ onSubmit, onCancel, defaultValues }) {
     },
   });
 
-  const DUMMY_VEHICLES = [
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => vehicleService.getVehicles(),
+  });
+
+  const vehicleOptions = [
     { value: '', label: 'Select Vehicle' },
-    { value: 'v1', label: 'Van-05 (Available)' },
-    { value: 'v2', label: 'Truck-02 (Available)' },
+    ...vehicles.map(v => ({ value: v.id, label: `${v.make} ${v.model} (${v.registrationNumber})` }))
   ];
 
   return (
@@ -31,7 +37,7 @@ export default function MaintenanceForm({ onSubmit, onCancel, defaultValues }) {
       <div className="grid grid-cols-1 gap-4">
         <Select 
           label="Vehicle"
-          options={DUMMY_VEHICLES}
+          options={vehicleOptions}
           {...register('vehicleId')}
           error={errors.vehicleId?.message}
         />

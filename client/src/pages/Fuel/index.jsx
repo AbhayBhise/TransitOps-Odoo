@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PageHeader from '../../components/ui/PageHeader';
 import DataTable from '../../components/tables/DataTable';
 import Modal from '../../components/ui/Modal';
@@ -6,32 +6,19 @@ import { useForm } from 'react-hook-form';
 import { Input, Select } from '../../components/ui/FormComponents';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fuelService, expenseService } from '../../services/fuel.service';
+import { vehicleService } from '../../services/vehicle.service';
 import { toast } from 'react-hot-toast';
 
-const INITIAL_FUEL_LOGS = [
-  { id: 'fuel-1', vehicleNo: 'MH-12-GQ-4819', vehicle: { registrationNumber: 'MH-12-GQ-4819' }, liters: 40, cost: 65.50, date: '2026-07-10' },
-  { id: 'fuel-2', vehicleNo: 'DL-01-AX-9922', vehicle: { registrationNumber: 'DL-01-AX-9922' }, liters: 150, cost: 245.00, date: '2026-07-11' },
-  { id: 'fuel-3', vehicleNo: 'HR-26-CK-1234', vehicle: { registrationNumber: 'HR-26-CK-1234' }, liters: 120, cost: 195.20, date: '2026-07-12' },
-];
-
-const INITIAL_EXPENSES = [
-  { id: 'exp-1', vehicleNo: 'DL-01-AX-9922', vehicle: { registrationNumber: 'DL-01-AX-9922' }, type: 'Toll', cost: 15.00, date: '2026-07-11' },
-  { id: 'exp-2', vehicleNo: 'MH-12-GQ-4819', vehicle: { registrationNumber: 'MH-12-GQ-4819' }, type: 'Parking', cost: 8.00, date: '2026-07-10' },
-];
-
-function FuelForm({ onSubmit, onCancel }) {
+function FuelForm({ onSubmit, onCancel, vehicles = [] }) {
   const { register, handleSubmit } = useForm();
+  const vehicleOptions = vehicles.map(v => ({ value: v.id, label: v.registrationNumber }));
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <Select
           label="Vehicle"
-          options={[
-            { value: 'MH-12-GQ-4819', label: 'MH-12-GQ-4819' },
-            { value: 'DL-01-AX-9922', label: 'DL-01-AX-9922' },
-            { value: 'HR-26-CK-1234', label: 'HR-26-CK-1234' },
-          ]}
-          {...register('vehicleNo')}
+          options={vehicleOptions}
+          {...register('vehicleId')}
         />
         <Input type="number" step="0.01" label="Liters" placeholder="e.g. 50" {...register('liters')} />
         <Input type="number" step="0.01" label="Cost ($)" placeholder="e.g. 80" {...register('cost')} />
@@ -51,42 +38,40 @@ export default function FuelPlaceholder() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('fuel');
 
+  // Vehicles query for the form options
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => vehicleService.getVehicles(),
+  });
+
   // Fuel query
-  const { data: queryFuelLogs = INITIAL_FUEL_LOGS } = useQuery({
+  const { data: queryFuelLogs = [] } = useQuery({
     queryKey: ['fuel'],
-    queryFn: async () => {
-      try {
-        const res = await fuelService.getFuelLogs();
-        return res && res.length > 0 ? res : INITIAL_FUEL_LOGS;
-      } catch (err) {
-        console.warn('Backend getFuelLogs API offline. Using mock data.', err);
-        return INITIAL_FUEL_LOGS;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => fuelService.getFuelLogs(),
   });
 
   // Expense query
-  const { data: queryExpenses = INITIAL_EXPENSES } = useQuery({
+  const { data: queryExpenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: async () => {
-      try {
-        const res = await expenseService.getExpenses();
-        return res && res.length > 0 ? res : INITIAL_EXPENSES;
-      } catch (err) {
-        console.warn('Backend getExpenses API offline. Using mock data.', err);
-        return INITIAL_EXPENSES;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => expenseService.getExpenses(),
   });
 
-  const [fuelLogs, setFuelLogs] = useState(queryFuelLogs);
-  const [expenses, setExpenses] = useState(queryExpenses);
-  useEffect(() => { setFuelLogs(queryFuelLogs); }, [queryFuelLogs]);
-  useEffect(() => { setExpenses(queryExpenses); }, [queryExpenses]);
+  const fuelLogs = queryFuelLogs.map(f => {
+    const vObj = vehicles.find(v => v.id === f.vehicleId);
+    return {
+      ...f,
+      vehicleNo: vObj?.registrationNumber || 'N/A'
+    };
+  });
+
+  const expenses = queryExpenses.map(e => {
+    const vObj = vehicles.find(v => v.id === e.vehicleId);
+    return {
+      ...e,
+      vehicleNo: vObj?.registrationNumber || 'N/A',
+      cost: e.amount
+    };
+  });
 
   const createFuelMutation = useMutation({
     mutationFn: fuelService.createFuelLog,
@@ -94,9 +79,9 @@ export default function FuelPlaceholder() {
       queryClient.invalidateQueries({ queryKey: ['fuel'] });
       toast.success('Fuel log recorded');
     },
-    onError: (err, variables) => {
-      setFuelLogs((prev) => [{ id: `fuel-${Date.now()}`, ...variables, date: new Date().toISOString().split('T')[0] }, ...prev]);
-      toast.success('Fuel logged (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to log fuel';
+      toast.error(msg);
     },
   });
 
@@ -179,8 +164,14 @@ export default function FuelPlaceholder() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log Fuel" size="md">
         <FuelForm
+          vehicles={vehicles}
           onSubmit={(data) => {
-            createFuelMutation.mutate({ vehicleNo: data.vehicleNo, liters: Number(data.liters), cost: Number(data.cost) });
+            createFuelMutation.mutate({
+              vehicleId: data.vehicleId,
+              liters: Number(data.liters),
+              cost: Number(data.cost),
+              date: new Date().toISOString()
+            });
             setIsModalOpen(false);
           }}
           onCancel={() => setIsModalOpen(false)}

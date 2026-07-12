@@ -3,6 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input, Select } from '../ui/FormComponents';
+import { useQuery } from '@tanstack/react-query';
+import { vehicleService } from '../../services/vehicle.service';
+import { driverService } from '../../services/driver.service';
 
 const tripSchema = z.object({
   source: z.string().min(2, 'Source is required'),
@@ -26,16 +29,24 @@ export default function TripForm({ onSubmit, onCancel, defaultValues }) {
     },
   });
 
-  const DUMMY_VEHICLES = [
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => vehicleService.getVehicles(),
+  });
+
+  const { data: drivers = [] } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: () => driverService.getDrivers(),
+  });
+
+  const vehicleOptions = [
     { value: '', label: 'Select Vehicle' },
-    { value: 'v1', label: 'Van-05 (Available)' },
-    { value: 'v2', label: 'Truck-02 (Available)' },
+    ...vehicles.filter(v => v.status === 'AVAILABLE').map(v => ({ value: v.id, label: `${v.make} ${v.model} (${v.registrationNumber})` }))
   ];
 
-  const DUMMY_DRIVERS = [
+  const driverOptions = [
     { value: '', label: 'Select Driver' },
-    { value: 'd1', label: 'Alex (Available)' },
-    { value: 'd2', label: 'Sam (Available)' },
+    ...drivers.filter(d => d.status === 'AVAILABLE').map(d => ({ value: d.id, label: `${d.name} (${d.licenseNumber})` }))
   ];
 
   return (
@@ -55,13 +66,13 @@ export default function TripForm({ onSubmit, onCancel, defaultValues }) {
         />
         <Select 
           label="Assign Vehicle"
-          options={DUMMY_VEHICLES}
+          options={vehicleOptions}
           {...register('vehicleId')}
           error={errors.vehicleId?.message}
         />
         <Select 
           label="Assign Driver"
-          options={DUMMY_DRIVERS}
+          options={driverOptions}
           {...register('driverId')}
           error={errors.driverId?.message}
         />

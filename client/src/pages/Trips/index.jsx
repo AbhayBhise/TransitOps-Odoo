@@ -6,7 +6,8 @@ import Modal from '../../components/ui/Modal';
 import TripForm from '../../components/forms/TripForm';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripService } from '../../services/trip.service';
-import { RECENT_TRIPS } from '../../utils/mockData';
+import { vehicleService } from '../../services/vehicle.service';
+import { driverService } from '../../services/driver.service';
 import { toast } from 'react-hot-toast';
 
 export default function TripsPlaceholder() {
@@ -15,24 +16,31 @@ export default function TripsPlaceholder() {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
 
-  // Query with fallback to mock data
-  const { data: queryTrips = RECENT_TRIPS } = useQuery({
+  // Query trips from API
+  const { data: queryTrips = [] } = useQuery({
     queryKey: ['trips'],
-    queryFn: async () => {
-      try {
-        const res = await tripService.getTrips();
-        return res && res.length > 0 ? res : RECENT_TRIPS;
-      } catch (err) {
-        console.warn('Backend getTrips API offline. Using mock data.', err);
-        return RECENT_TRIPS;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => tripService.getTrips(),
   });
 
-  const [trips, setTrips] = useState(queryTrips);
-  useEffect(() => { setTrips(queryTrips); }, [queryTrips]);
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => vehicleService.getVehicles(),
+  });
+
+  const { data: drivers = [] } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: () => driverService.getDrivers(),
+  });
+
+  const trips = queryTrips.map(t => {
+    const vObj = vehicles.find(v => v.id === t.vehicleId);
+    const dObj = drivers.find(d => d.id === t.driverId);
+    return {
+      ...t,
+      vehicleNo: vObj?.registrationNumber || 'N/A',
+      driverName: dObj?.name || 'N/A'
+    };
+  });
 
   // Create mutation
   const createMutation = useMutation({
@@ -41,10 +49,9 @@ export default function TripsPlaceholder() {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
       toast.success('Trip created successfully');
     },
-    onError: (err, variables) => {
-      const newTrip = { id: `trip-${Date.now()}`, ...variables, status: 'DRAFT' };
-      setTrips((prev) => [newTrip, ...prev]);
-      toast.success('Trip created (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to create trip';
+      toast.error(msg);
     },
   });
 
@@ -55,11 +62,9 @@ export default function TripsPlaceholder() {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
       toast.success('Trip updated successfully');
     },
-    onError: (err, variables) => {
-      setTrips((prev) =>
-        prev.map((t) => (t.id === variables.id ? { ...t, ...variables.data } : t))
-      );
-      toast.success('Trip updated (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to update trip';
+      toast.error(msg);
     },
   });
 

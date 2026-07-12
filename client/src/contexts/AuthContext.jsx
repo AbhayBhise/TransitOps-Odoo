@@ -55,8 +55,13 @@ export function AuthProvider({ children }) {
 
       try {
         const userData = await authService.getCurrentUser();
-        setUser(userData);
-        localStorage.setItem('transitops_user', JSON.stringify(userData));
+        const cachedUserObj = cachedUser ? JSON.parse(cachedUser) : {};
+        const mergedUser = {
+          name: cachedUserObj.name || 'User',
+          ...userData,
+        };
+        setUser(mergedUser);
+        localStorage.setItem('transitops_user', JSON.stringify(mergedUser));
       } catch {
         clearSession();
       } finally {

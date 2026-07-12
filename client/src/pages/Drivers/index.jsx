@@ -10,7 +10,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driverService } from '../../services/driver.service';
-import { INITIAL_DRIVERS } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
 import { Edit2, Trash2 } from 'lucide-react';
 
@@ -22,7 +21,16 @@ const driverSchema = z.object({
     .min(1, 'License Number is required')
     .regex(/^[A-Z]{2}-\d{12}$/, 'Format must match DL-MHXXXXXXXXXX'),
   licenseCategory: z.string().min(1, 'License Category is required'),
-  licenseExpiry: z.string().min(1, 'License Expiry Date is required'),
+  licenseExpiry: z
+    .string()
+    .min(1, 'License Expiry Date is required')
+    .refine((val) => {
+      const today = new Date('2026-07-12');
+      const expiry = new Date(val);
+      return expiry > today;
+    }, {
+      message: 'License expiry date must be in the future (minimum 1 day from today)',
+    }),
   phone: z.string().min(10, 'Contact number must be at least 10 digits'),
   safetyScore: z.coerce.number().min(0, 'Min score is 0').max(100, 'Max score is 100'),
   status: z.enum(['AVAILABLE', 'ON_TRIP', 'OFF_DUTY', 'SUSPENDED']),
@@ -41,28 +49,11 @@ export default function Drivers() {
     return new Date(expiryDate) < new Date(TODAY);
   };
 
-  // Query Drivers with fallback to mock data
-  const { data: queryDrivers = INITIAL_DRIVERS, isLoading } = useQuery({
+  // Query Drivers from API
+  const { data: drivers = [], isLoading } = useQuery({
     queryKey: ['drivers'],
-    queryFn: async () => {
-      try {
-        const res = await driverService.getDrivers();
-        return res && res.length > 0 ? res : INITIAL_DRIVERS;
-      } catch (err) {
-        console.warn('Backend getDrivers API offline. Simulating with mock data.', err);
-        return INITIAL_DRIVERS;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => driverService.getDrivers(),
   });
-
-  // Local fallback state to support mutations offline
-  const [drivers, setDrivers] = useState(queryDrivers);
-
-  useEffect(() => {
-    setDrivers(queryDrivers);
-  }, [queryDrivers]);
 
   // Mutations
   const createMutation = useMutation({
@@ -71,11 +62,9 @@ export default function Drivers() {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver profile created successfully');
     },
-    onError: (err, variables) => {
-      // Local fallback simulation
-      const newDriver = { id: `drv-${Date.now()}`, ...variables };
-      setDrivers((prev) => [newDriver, ...prev]);
-      toast.success('Driver registered (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to create driver';
+      toast.error(msg);
     },
   });
 
@@ -85,12 +74,9 @@ export default function Drivers() {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver updated successfully');
     },
-    onError: (err, variables) => {
-      // Local fallback simulation
-      setDrivers((prev) =>
-        prev.map((d) => (d.id === variables.id ? { ...d, ...variables.data } : d))
-      );
-      toast.success('Driver updated (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to update driver';
+      toast.error(msg);
     },
   });
 
@@ -100,10 +86,9 @@ export default function Drivers() {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver profile deleted successfully');
     },
-    onError: (err, id) => {
-      // Local fallback simulation
-      setDrivers((prev) => prev.filter((d) => d.id !== id));
-      toast.success('Driver deregistered (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to delete driver';
+      toast.error(msg);
     },
   });
 

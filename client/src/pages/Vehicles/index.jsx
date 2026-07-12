@@ -10,7 +10,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vehicleService } from '../../services/vehicle.service';
-import { INITIAL_VEHICLES } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
 import { Edit2, Trash2 } from 'lucide-react';
 
@@ -34,28 +33,11 @@ export default function Vehicles() {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [deletingVehicleId, setDeletingVehicleId] = useState(null);
 
-  // Query Vehicles with fallback to mock data
-  const { data: queryVehicles = INITIAL_VEHICLES, isLoading } = useQuery({
+  // Query Vehicles from API
+  const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: async () => {
-      try {
-        const res = await vehicleService.getVehicles();
-        return res && res.length > 0 ? res : INITIAL_VEHICLES;
-      } catch (err) {
-        console.warn('Backend getVehicles API offline. Simulating with mock data.', err);
-        return INITIAL_VEHICLES;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
+    queryFn: () => vehicleService.getVehicles(),
   });
-
-  // Local fallback state to support mutations offline
-  const [vehicles, setVehicles] = useState(queryVehicles);
-
-  useEffect(() => {
-    setVehicles(queryVehicles);
-  }, [queryVehicles]);
 
   // Mutations
   const createMutation = useMutation({
@@ -64,11 +46,9 @@ export default function Vehicles() {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success('Vehicle registered successfully');
     },
-    onError: (err, variables) => {
-      // Local fallback simulation
-      const newVehicle = { id: `veh-${Date.now()}`, ...variables };
-      setVehicles((prev) => [newVehicle, ...prev]);
-      toast.success('Vehicle registered (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to register vehicle';
+      toast.error(msg);
     },
   });
 
@@ -78,12 +58,9 @@ export default function Vehicles() {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success('Vehicle updated successfully');
     },
-    onError: (err, variables) => {
-      // Local fallback simulation
-      setVehicles((prev) =>
-        prev.map((v) => (v.id === variables.id ? { ...v, ...variables.data } : v))
-      );
-      toast.success('Vehicle updated (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to update vehicle';
+      toast.error(msg);
     },
   });
 
@@ -93,10 +70,9 @@ export default function Vehicles() {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success('Vehicle deleted successfully');
     },
-    onError: (err, id) => {
-      // Local fallback simulation
-      setVehicles((prev) => prev.filter((v) => v.id !== id));
-      toast.success('Vehicle deregistered (Local Simulation)');
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to delete vehicle';
+      toast.error(msg);
     },
   });
 

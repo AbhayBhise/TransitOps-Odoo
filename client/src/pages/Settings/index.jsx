@@ -4,13 +4,7 @@ import { Input, Select } from '../../components/ui/FormComponents';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../services/settings.service';
 import { toast } from 'react-hot-toast';
-
-const INITIAL_PROFILE = {
-  fullName: 'Alex Mercer',
-  email: 'alex@transitops.com',
-  phone: '+91 98765 43210',
-  jobTitle: 'Operations Module Lead',
-};
+import { useAuth } from '../../contexts/AuthContext';
 
 const INITIAL_PREFERENCES = {
   darkTheme: true,
@@ -21,33 +15,36 @@ const INITIAL_PREFERENCES = {
 };
 
 const ROLE_OPTIONS = [
-  { value: 'admin', label: 'Fleet Manager (Full Access)' },
-  { value: 'dispatcher', label: 'Dispatcher' },
-  { value: 'safety', label: 'Safety Officer' },
-  { value: 'driver', label: 'Driver (Mobile Only)' },
+  { value: 'ADMIN', label: 'Administrator (Full Access)' },
+  { value: 'MANAGER', label: 'Fleet Manager' },
+  { value: 'USER', label: 'Operations Staff' },
+  { value: 'DRIVER', label: 'Driver' },
 ];
 
 export default function SettingsPlaceholder() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const [profile, setProfile] = useState(INITIAL_PROFILE);
-  const [role, setRole] = useState('admin');
+  const [profile, setProfile] = useState({
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: '',
+    jobTitle: '',
+  });
+  const [role, setRole] = useState(user?.role || 'USER');
   const [preferences, setPreferences] = useState(INITIAL_PREFERENCES);
 
-  const { data: queryProfile } = useQuery({
-    queryKey: ['settings-profile'],
-    queryFn: async () => {
-      try {
-        const res = await settingsService.getProfile();
-        return res || INITIAL_PROFILE;
-      } catch (err) {
-        console.warn('Backend profile API offline. Using defaults.', err);
-        return INITIAL_PROFILE;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
+  // Sync profile with authenticated user
+  useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        ...prev,
+        fullName: user.name || prev.fullName,
+        email: user.email || prev.email,
+      }));
+      setRole(user.role || 'USER');
+    }
+  }, [user]);
 
   const { data: queryPreferences } = useQuery({
     queryKey: ['settings-preferences'],
@@ -55,8 +52,7 @@ export default function SettingsPlaceholder() {
       try {
         const res = await settingsService.getPreferences();
         return res || INITIAL_PREFERENCES;
-      } catch (err) {
-        console.warn('Backend preferences API offline. Using defaults.', err);
+      } catch {
         return INITIAL_PREFERENCES;
       }
     },
@@ -64,16 +60,20 @@ export default function SettingsPlaceholder() {
     retry: false,
   });
 
-  useEffect(() => { if (queryProfile) setProfile(queryProfile); }, [queryProfile]);
+
+  const { data: queryPreferencesOld } = useQuery({
+    queryKey: ['settings-preferences-legacy'],
+    queryFn: async () => INITIAL_PREFERENCES,
+    enabled: false,
+  });
+
   useEffect(() => { if (queryPreferences) setPreferences(queryPreferences); }, [queryPreferences]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await settingsService.updateProfile(profile);
       await settingsService.updatePreferences(preferences);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
       queryClient.invalidateQueries({ queryKey: ['settings-preferences'] });
       toast.success('Settings saved successfully');
     },
