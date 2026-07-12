@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bell, Globe, ChevronDown, Menu } from 'lucide-react';
+import SearchBar from '../ui/SearchBar';
 
 export default function Navbar({ onToggleMobileMenu }) {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -19,6 +20,10 @@ export default function Navbar({ onToggleMobileMenu }) {
           Hub: Fleet-Alpha
         </span>
       </div>
+
+      {/* Global Navbar Search Bar */}
+      <SearchBar />
+
 
       {/* Action Utilities */}
       <div className="flex items-center gap-2 md:gap-4">
