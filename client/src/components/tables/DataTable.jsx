@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import EmptyState from '../ui/EmptyState';
-import { ChevronLeft, ChevronRight, Search, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Plus, X, Download } from 'lucide-react';
 
 export default function DataTable({
   columns = [],
@@ -11,6 +11,7 @@ export default function DataTable({
   addText = 'Add Record',
   emptyTitle,
   emptyDescription,
+  exportFilename = '',
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,6 +39,36 @@ export default function DataTable({
   const handleClearSearch = () => {
     setSearchTerm('');
     setCurrentPage(1);
+  };
+
+  const handleExportCSV = () => {
+    if (filteredData.length === 0) return;
+
+    // Extract headers (exclude the Actions column)
+    const exportableCols = columns.filter((col) => col.key !== 'actions');
+    const headers = exportableCols.map((col) => col.title).join(',');
+
+    // Map rows to CSV strings
+    const rows = filteredData.map((row) =>
+      exportableCols
+        .map((col) => {
+          const val = row[col.key];
+          // Escape quotes and wrap with double quotes to handle commas
+          return `"${String(val ?? '').replace(/"/g, '""')}"`;
+        })
+        .join(',')
+    );
+
+    const csvContent = '\uFEFF' + [headers, ...rows].join('\n'); // Add UTF-8 BOM
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${exportFilename || 'export'}_${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -73,15 +104,28 @@ export default function DataTable({
           <div className="flex-1" />
         )}
 
-        {onAddClick && (
-          <button
-            onClick={onAddClick}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] rounded-lg transition-all shadow-lg shadow-amber-500/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
-          >
-            <Plus size={15} />
-            {addText}
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          {exportFilename && filteredData.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-slate-100 border border-slate-700 rounded-lg transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
+            >
+              <Download size={15} />
+              Export CSV
+            </button>
+          )}
+
+          {onAddClick && (
+            <button
+              onClick={onAddClick}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] rounded-lg transition-all shadow-lg shadow-amber-500/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
+            >
+              <Plus size={15} />
+              {addText}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table Grid Wrapper with Scroll Boundary */}

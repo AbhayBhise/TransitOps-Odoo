@@ -189,6 +189,7 @@ export default function Vehicles() {
         addText="Register Vehicle"
         emptyTitle="No vehicles registered"
         emptyDescription="Get started by registering a new vehicle asset for dispatch."
+        exportFilename="vehicles_registry"
       />
 
       {/* Add / Edit Modal */}

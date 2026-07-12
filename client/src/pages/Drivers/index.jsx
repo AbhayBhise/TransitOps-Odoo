@@ -216,6 +216,7 @@ export default function Drivers() {
         addText="Add Driver Profile"
         emptyTitle="No drivers found"
         emptyDescription="Register driver operators to make them eligible for dispatch dispatching."
+        exportFilename="drivers_registry"
       />
 
       {/* Add / Edit Modal */}
