@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Bell, Globe, Menu, LogOut } from 'lucide-react';
+import { Bell, Sun, Moon, Menu, LogOut } from 'lucide-react';
 import SearchBar from '../ui/SearchBar';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { toast } from 'react-hot-toast';
 
 export default function Navbar({ onToggleMobileMenu }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
@@ -42,12 +44,14 @@ export default function Navbar({ onToggleMobileMenu }) {
 
       {/* Action Utilities */}
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Globe icon */}
+        {/* Theme Toggle */}
         <button
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 rounded-xl transition-colors hidden sm:block focus-visible:ring-2 focus-visible:ring-amber-500/50"
-          aria-label="Language Selector"
+          onClick={toggleTheme}
+          className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-900/60 rounded-xl transition-colors hidden sm:block focus-visible:ring-2 focus-visible:ring-amber-500/50"
+          aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          title={isDark ? 'Light Mode' : 'Dark Mode'}
         >
-          <Globe size={18} />
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {/* Notifications */}

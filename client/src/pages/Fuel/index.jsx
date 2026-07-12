@@ -21,7 +21,7 @@ function FuelForm({ onSubmit, onCancel, vehicles = [] }) {
           {...register('vehicleId')}
         />
         <Input type="number" step="0.01" label="Liters" placeholder="e.g. 50" {...register('liters')} />
-        <Input type="number" step="0.01" label="Cost ($)" placeholder="e.g. 80" {...register('cost')} />
+        <Input type="number" step="0.01" label="Cost (₹)" placeholder="e.g. 80" {...register('cost')} />
       </div>
       <div className="flex justify-end gap-3 pt-4 mt-6 border-t border-slate-800">
         <button type="button" onClick={onCancel} className="px-5 py-2 text-sm text-slate-300 hover:text-white cursor-pointer">Cancel</button>
@@ -94,7 +94,7 @@ export default function FuelPlaceholder() {
     { key: 'date', title: 'Date', width: '15%', render: (row) => row.date?.split('T')[0] || '-' },
     { key: 'vehicleNo', title: 'Vehicle', width: '20%', render: (row) => row.vehicle?.registrationNumber || row.vehicleNo || '-' },
     { key: 'liters', title: 'Volume', width: '15%', render: (row) => `${Number(row.liters)} L` },
-    { key: 'cost', title: 'Cost', width: '15%', render: (row) => <span className="text-amber-500 font-medium">${Number(row.cost).toFixed(2)}</span> },
+    { key: 'cost', title: 'Cost (₹)', width: '15%', render: (row) => <span className="text-amber-500 font-medium">₹{Number(row.cost).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> },
   ];
 
   const expenseColumns = [
@@ -104,7 +104,7 @@ export default function FuelPlaceholder() {
       <span className="px-2 py-1 rounded text-xs font-bold bg-purple-900/40 text-purple-400">{row.type}</span>
     )},
     { key: 'vehicleNo', title: 'Vehicle', width: '20%', render: (row) => row.vehicle?.registrationNumber || row.vehicleNo || '-' },
-    { key: 'cost', title: 'Cost', width: '15%', render: (row) => <span className="text-amber-500 font-medium">${Number(row.cost).toFixed(2)}</span> },
+    { key: 'cost', title: 'Cost (₹)', width: '15%', render: (row) => <span className="text-amber-500 font-medium">₹{Number(row.cost).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> },
   ];
 
   return (
@@ -115,7 +115,7 @@ export default function FuelPlaceholder() {
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl glass-panel relative overflow-hidden">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Fuel Cost</p>
-          <h4 className="text-4xl font-black text-slate-100 mt-2">${totalFuelCost.toFixed(2)}</h4>
+          <h4 className="text-4xl font-black text-slate-100 mt-2">₹{totalFuelCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
         </div>
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl glass-panel relative overflow-hidden">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
@@ -125,7 +125,7 @@ export default function FuelPlaceholder() {
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl glass-panel relative overflow-hidden">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Other Expenses</p>
-          <h4 className="text-4xl font-black text-slate-100 mt-2">${totalExpenses.toFixed(2)}</h4>
+          <h4 className="text-4xl font-black text-slate-100 mt-2">₹{totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
         </div>
       </div>
 

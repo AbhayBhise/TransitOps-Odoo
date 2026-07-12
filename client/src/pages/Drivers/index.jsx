@@ -18,18 +18,23 @@ const driverSchema = z.object({
   name: z.string().min(1, 'Driver Name is required'),
   licenseNumber: z
     .string()
-    .min(1, 'License Number is required')
-    .regex(/^[A-Z]{2}-\d{12}$/, 'Format must match DL-MHXXXXXXXXXX'),
+    .min(5, 'License Number must be at least 5 characters')
+    .max(30, 'License Number is too long')
+    .regex(
+      /^[A-Z]{2}[-\s]?\d{2}[-\s]?\d{4,7}$/,
+      'Format: MH-12-12345678 or MH-12-1234567'
+    ),
   licenseCategory: z.string().min(1, 'License Category is required'),
   licenseExpiry: z
     .string()
     .min(1, 'License Expiry Date is required')
     .refine((val) => {
-      const today = new Date('2026-07-12');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const expiry = new Date(val);
       return expiry > today;
     }, {
-      message: 'License expiry date must be in the future (minimum 1 day from today)',
+      message: 'License expiry date must be a future date',
     }),
   phone: z.string().min(10, 'Contact number must be at least 10 digits'),
   safetyScore: z.coerce.number().min(0, 'Min score is 0').max(100, 'Max score is 100'),
@@ -279,12 +284,19 @@ export default function Drivers() {
             error={errors.name?.message}
             {...register('name')}
           />
-          <Input
-            label="License Number"
-            placeholder="e.g. DL-MH1220150098"
-            error={errors.licenseNumber?.message}
-            {...register('licenseNumber')}
-          />
+          <div>
+            <Input
+              label="License Number"
+              placeholder="e.g. MH-12-12345678"
+              error={errors.licenseNumber?.message}
+              {...register('licenseNumber')}
+            />
+            {!errors.licenseNumber && (
+              <p className="text-[10px] text-slate-500 mt-1 pl-1">
+                Format: State Code – RTO Code – Number (e.g. <span className="text-amber-500 font-mono">MH-12-12345678</span> or <span className="text-amber-500 font-mono">DL-04-20170012</span>)
+              </p>
+            )}
+          </div>
           <Select
             label="License Category"
             options={[
