@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
-import { Bell, Globe, Menu } from 'lucide-react';
+import { Bell, Globe, Menu, LogOut } from 'lucide-react';
 import SearchBar from '../ui/SearchBar';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 export default function Navbar({ onToggleMobileMenu }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login', { replace: true });
+  };
+
+  const getInitials = (name) => {
+    if (!name) return '??';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
     <header className="h-16 px-4 md:px-6 border-b border-slate-800 bg-slate-950 flex items-center justify-between sticky top-0 z-30 shrink-0">
@@ -73,21 +86,30 @@ export default function Navbar({ onToggleMobileMenu }) {
         {/* Divider */}
         <span className="h-6 w-px bg-slate-800" />
 
-        {/* User Profile Trigger - Navigates directly to /profile page */}
+        {/* User Profile Trigger */}
         <button
           onClick={() => navigate('/profile')}
           aria-label="View user profile"
           className="flex items-center gap-2.5 p-1 px-1.5 sm:px-2 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 hover:bg-slate-900/60 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
         >
-          {/* Circular Avatar with fallback initials & status dot */}
           <div className="relative w-7.5 h-7.5 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center font-bold text-xs text-amber-500 shrink-0">
-            <span>VP</span>
+            <span>{getInitials(user?.name)}</span>
             <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-slate-950 animate-pulse shadow-sm shadow-emerald-500/50" />
           </div>
           <div className="hidden md:block text-left pr-1">
-            <p className="text-xs font-bold text-slate-200 leading-tight">Vaishnavi Phad</p>
-            <p className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider">Frontend ERP Dev</p>
+            <p className="text-xs font-bold text-slate-200 leading-tight">{user?.name || 'User'}</p>
+            <p className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider">{user?.role || 'USER'}</p>
           </div>
+        </button>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-900/60 rounded-xl transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-red-500/50"
+          aria-label="Logout"
+          title="Logout"
+        >
+          <LogOut size={18} />
         </button>
       </div>
     </header>

@@ -11,25 +11,28 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   X,
   User,
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MENU_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/vehicles', label: 'Vehicles', icon: Truck },
-  { path: '/drivers', label: 'Drivers', icon: Users },
-  { path: '/trips', label: 'Trips', icon: Compass },
-  { path: '/maintenance', label: 'Maintenance', icon: Wrench },
-  { path: '/fuel', label: 'Fuel & Expenses', icon: Fuel },
-  { path: '/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { path: '/settings', label: 'Settings', icon: Settings },
-  { path: '/profile', label: 'Profile', icon: User },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
+  { path: '/vehicles', label: 'Vehicles', icon: Truck, permission: 'vehicles' },
+  { path: '/drivers', label: 'Drivers', icon: Users, permission: 'drivers' },
+  { path: '/trips', label: 'Trips', icon: Compass, permission: 'trips' },
+  { path: '/maintenance', label: 'Maintenance', icon: Wrench, permission: 'maintenance' },
+  { path: '/fuel', label: 'Fuel & Expenses', icon: Fuel, permission: 'fuel' },
+  { path: '/reports', label: 'Reports & Analytics', icon: BarChart3, permission: 'reports' },
+  { path: '/settings', label: 'Settings', icon: Settings, permission: 'settings' },
+  { path: '/profile', label: 'Profile', icon: User, permission: 'profile' },
 ];
 
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { hasPermission } = useAuth();
+
+  const visibleItems = MENU_ITEMS.filter((item) => hasPermission(item.permission));
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-slate-950 border-r border-slate-800">
@@ -70,7 +73,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
 
       {/* Menu List */}
       <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-        {MENU_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
