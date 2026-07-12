@@ -11,7 +11,7 @@ export const authService = {
   async register({ email, password, name, roleName }) {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      throw new ApiError(STATUS_CODES.BAD_REQUEST, 'User with this email already exists');
+      throw new ApiError(409, 'User with this email already exists');
     }
 
     let role = await prisma.role.findUnique({ where: { name: roleName } });
