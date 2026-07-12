@@ -188,11 +188,12 @@ export default function Drivers() {
       title: 'License Expiry',
       width: '15%',
       render: (d) => {
+        const displayDate = d.licenseExpiry ? d.licenseExpiry.substring(0, 10) : '';
         const expired = isLicenseExpired(d.licenseExpiry);
         return (
           <div className="flex items-center gap-1.5 overflow-hidden">
             <span className={expired ? 'text-rose-400 font-semibold' : 'text-slate-300'}>
-              {d.licenseExpiry}
+              {displayDate}
             </span>
             {expired && (
               <span className="p-0.5 bg-rose-500/10 text-rose-500 rounded border border-rose-500/20 text-[9px] uppercase tracking-wider font-bold shrink-0">
@@ -209,7 +210,7 @@ export default function Drivers() {
       title: 'Safety',
       width: '8%',
       render: (d) => {
-        const score = d.safetyScore;
+        const score = d.safetyScore !== undefined && d.safetyScore !== null ? d.safetyScore : 100;
         let color = 'text-emerald-400';
         if (score < 75) color = 'text-rose-400 font-bold';
         else if (score < 90) color = 'text-amber-400';

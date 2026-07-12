@@ -166,19 +166,19 @@ export default function Vehicles() {
       key: 'capacity',
       title: 'Capacity',
       width: '12%',
-      render: (v) => <span>{v.capacity.toLocaleString()} kg</span>,
+      render: (v) => <span>{(v.capacity || 0).toLocaleString()} kg</span>,
     },
     {
       key: 'odometer',
       title: 'Odometer',
       width: '12%',
-      render: (v) => <span>{v.odometer.toLocaleString()} km</span>,
+      render: (v) => <span>{(v.odometer || 0).toLocaleString()} km</span>,
     },
     {
       key: 'cost',
       title: 'Acquisition',
       width: '11%',
-      render: (v) => <span>${v.cost.toLocaleString()}</span>,
+      render: (v) => <span>${(v.cost || 0).toLocaleString()}</span>,
     },
     {
       key: 'status',
