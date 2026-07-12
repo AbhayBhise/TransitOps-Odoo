@@ -6,7 +6,7 @@ import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Select } from '../../components/ui/FormComponents';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod'; // Wait, let's verify if @hookform/resolvers is installed!
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { INITIAL_VEHICLES } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
@@ -73,11 +73,10 @@ export default function Vehicles() {
     setIsModalOpen(true);
   };
 
-  // Save Vehicle (Create or Update)
+  // Save Vehicle
   const onSave = (data) => {
     if (editingVehicle) {
       // Update
-      // Validate unique registration number excluding self
       const isDuplicate = vehicles.some(
         (v) =>
           v.registrationNumber.toLowerCase() === data.registrationNumber.toLowerCase() &&
@@ -93,7 +92,6 @@ export default function Vehicles() {
       toast.success('Vehicle updated successfully');
     } else {
       // Create
-      // Validate unique registration number
       const isDuplicate = vehicles.some(
         (v) => v.registrationNumber.toLowerCase() === data.registrationNumber.toLowerCase()
       );
@@ -122,35 +120,41 @@ export default function Vehicles() {
     {
       key: 'registrationNumber',
       title: 'Registration No',
+      width: '18%',
       render: (v) => <span className="font-mono font-bold text-slate-200">{v.registrationNumber}</span>,
     },
-    { key: 'model', title: 'Model' },
-    { key: 'type', title: 'Type' },
+    { key: 'model', title: 'Model', width: '22%' },
+    { key: 'type', title: 'Type', width: '15%' },
     {
       key: 'capacity',
       title: 'Capacity',
+      width: '12%',
       render: (v) => <span>{v.capacity.toLocaleString()} kg</span>,
     },
     {
       key: 'odometer',
       title: 'Odometer',
+      width: '12%',
       render: (v) => <span>{v.odometer.toLocaleString()} km</span>,
     },
     {
       key: 'cost',
-      title: 'Acquisition Cost',
+      title: 'Acquisition',
+      width: '11%',
       render: (v) => <span>${v.cost.toLocaleString()}</span>,
     },
     {
       key: 'status',
       title: 'Status',
+      width: '12%',
       render: (v) => <StatusBadge status={v.status} />,
     },
     {
       key: 'actions',
       title: 'Actions',
+      width: '8%',
       render: (v) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleEditClick(v)}
             className="p-1.5 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-amber-500 hover:border-amber-500/35 transition-colors cursor-pointer"
@@ -217,7 +221,7 @@ export default function Vehicles() {
             error={errors.type?.message}
             {...register('type')}
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Capacity (kg)"
               type="number"
@@ -231,7 +235,7 @@ export default function Vehicles() {
               {...register('odometer')}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Acquisition Cost ($)"
               type="number"

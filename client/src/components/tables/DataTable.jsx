@@ -38,9 +38,9 @@ export default function DataTable({
   return (
     <div className="space-y-4">
       {/* Search / Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-950/20 p-4 rounded-xl border border-slate-800 glass-panel">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-950/20 p-4 rounded-xl border border-slate-800 glass-panel">
         {searchKey ? (
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
               type="text"
@@ -50,7 +50,7 @@ export default function DataTable({
                 setCurrentPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all focus:ring-offset-0"
             />
           </div>
         ) : (
@@ -60,7 +60,7 @@ export default function DataTable({
         {onAddClick && (
           <button
             onClick={onAddClick}
-            className="flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors shadow-lg shadow-amber-500/10 cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 active:scale-95 rounded-lg transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
           >
             <Plus size={15} />
             {addText}
@@ -68,7 +68,7 @@ export default function DataTable({
         )}
       </div>
 
-      {/* Table grid */}
+      {/* Table Grid Wrapper with Scroll Boundary */}
       {paginatedData.length === 0 ? (
         <EmptyState
           title={emptyTitle}
@@ -77,7 +77,7 @@ export default function DataTable({
             onAddClick && (
               <button
                 onClick={onAddClick}
-                className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer"
+                className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-950 bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors cursor-pointer"
               >
                 {addText}
               </button>
@@ -85,49 +85,54 @@ export default function DataTable({
           }
         />
       ) : (
-        <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/30 glass-panel">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/65">
-                  {columns.map((col) => (
-                    <th
-                      key={col.key}
-                      className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400"
-                    >
-                      {col.title}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850">
-                {paginatedData.map((row, rowIndex) => (
-                  <tr
-                    key={row.id || rowIndex}
-                    className="hover:bg-slate-900/40 transition-colors"
-                  >
-                    {columns.map((col) => (
-                      <td key={col.key} className="px-6 py-4 text-sm text-slate-300">
-                        {col.render ? col.render(row) : row[col.key]}
-                      </td>
+        <div className="border border-slate-800 rounded-xl bg-slate-950/30 glass-panel flex flex-col">
+          <div className="overflow-x-auto w-full">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-[800px] w-full border-collapse text-left table-fixed">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-950/65">
+                      {columns.map((col) => (
+                        <th
+                          key={col.key}
+                          className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-400"
+                          style={{ width: col.width || 'auto' }}
+                        >
+                          {col.title}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850">
+                    {paginatedData.map((row, rowIndex) => (
+                      <tr
+                        key={row.id || rowIndex}
+                        className="hover:bg-slate-900/40 transition-colors"
+                      >
+                        {columns.map((col) => (
+                          <td key={col.key} className="px-6 py-4 text-sm text-slate-300 truncate">
+                            {col.render ? col.render(row) : row[col.key]}
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           {/* Pagination Footer */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/20">
-              <span className="text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-800 bg-slate-950/20 shrink-0">
+              <span className="text-xs text-slate-500 order-2 sm:order-1">
                 Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} entries
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 order-1 sm:order-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -137,7 +142,7 @@ export default function DataTable({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ChevronRight size={16} />
                 </button>

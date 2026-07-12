@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { INITIAL_DRIVERS } from '../../utils/mockData';
 import { toast } from 'react-hot-toast';
-import { Edit2, Trash2, Calendar, ShieldAlert } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react';
 
 // Form validation schema
 const driverSchema = z.object({
@@ -124,21 +124,32 @@ export default function Drivers() {
   };
 
   const columns = [
-    { key: 'name', title: 'Name', render: (d) => <span className="font-semibold text-slate-200">{d.name}</span> },
-    { key: 'licenseNumber', title: 'License No', render: (d) => <span className="font-mono text-slate-400">{d.licenseNumber}</span> },
-    { key: 'licenseCategory', title: 'Category' },
+    {
+      key: 'name',
+      title: 'Name',
+      width: '20%',
+      render: (d) => <span className="font-semibold text-slate-200">{d.name}</span>,
+    },
+    {
+      key: 'licenseNumber',
+      title: 'License No',
+      width: '18%',
+      render: (d) => <span className="font-mono text-slate-400">{d.licenseNumber}</span>,
+    },
+    { key: 'licenseCategory', title: 'Category', width: '18%' },
     {
       key: 'licenseExpiry',
       title: 'License Expiry',
+      width: '15%',
       render: (d) => {
         const expired = isLicenseExpired(d.licenseExpiry);
         return (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-hidden">
             <span className={expired ? 'text-rose-400 font-semibold' : 'text-slate-300'}>
               {d.licenseExpiry}
             </span>
             {expired && (
-              <span className="p-0.5 bg-rose-500/10 text-rose-500 rounded border border-rose-500/20 text-[9px] uppercase tracking-wider font-bold">
+              <span className="p-0.5 bg-rose-500/10 text-rose-500 rounded border border-rose-500/20 text-[9px] uppercase tracking-wider font-bold shrink-0">
                 Expired
               </span>
             )}
@@ -146,10 +157,11 @@ export default function Drivers() {
         );
       },
     },
-    { key: 'phone', title: 'Phone' },
+    { key: 'phone', title: 'Phone', width: '15%' },
     {
       key: 'safetyScore',
-      title: 'Safety Score',
+      title: 'Safety',
+      width: '8%',
       render: (d) => {
         const score = d.safetyScore;
         let color = 'text-emerald-400';
@@ -161,13 +173,15 @@ export default function Drivers() {
     {
       key: 'status',
       title: 'Status',
+      width: '10%',
       render: (d) => <StatusBadge status={d.status} />,
     },
     {
       key: 'actions',
       title: 'Actions',
+      width: '8%',
       render: (d) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleEditClick(d)}
             className="p-1.5 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-amber-500 hover:border-amber-500/35 transition-colors cursor-pointer"
@@ -233,7 +247,7 @@ export default function Drivers() {
             error={errors.licenseCategory?.message}
             {...register('licenseCategory')}
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="License Expiry"
               type="date"
@@ -247,7 +261,7 @@ export default function Drivers() {
               {...register('safetyScore')}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Phone Number"
               placeholder="+91 XXXXX XXXXX"
