@@ -20,12 +20,13 @@ const vehicleSchema = z.object({
     .min(1, 'Registration Number is required')
     .regex(/^[A-Z0-9][-A-Z0-9\s]{4,28}$/, 'Format: MH-12-GQ-4819 (uppercase alphanumeric and dashes only)'),
   model: z.string().min(1, 'Vehicle Model is required'),
-  type: z.string().min(1, 'Vehicle Type is required'),
-  capacity: z.coerce.number().positive('Capacity must be a positive number'),
-  odometer: z.coerce.number().nonnegative('Odometer must be non-negative'),
-  cost: z.coerce.number().positive('Acquisition Cost must be positive'),
+  type: z.string().optional(),
+  capacity: z.coerce.number().nonnegative().optional().default(0),
+  odometer: z.coerce.number().nonnegative().optional().default(0),
+  cost: z.coerce.number().nonnegative().optional().default(0),
   status: z.enum(['AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED']),
 });
+
 
 export default function Vehicles() {
   const queryClient = useQueryClient();
@@ -113,20 +114,32 @@ export default function Vehicles() {
   // Open Modal for Edit
   const handleEditClick = (vehicle) => {
     setEditingVehicle(vehicle);
-    reset(vehicle);
+    reset({
+      registrationNumber: vehicle.registrationNumber || '',
+      model: vehicle.model || '',
+      type: vehicle.type || 'Heavy Truck',
+      capacity: vehicle.capacity || 1000,
+      odometer: vehicle.odometer || 0,
+      cost: vehicle.cost || 0,
+      status: vehicle.status || 'AVAILABLE',
+    });
     setIsModalOpen(true);
   };
 
+
   // Save Vehicle
   const onSave = (data) => {
+    // Only send fields that the backend actually accepts
     const payload = {
-      ...data,
+      registrationNumber: data.registrationNumber,
       make: data.model ? data.model.split(' ')[0] : 'Fleet',
+      model: data.model,
       year: 2026,
-      capacity: Number(data.capacity),
+      status: data.status,
+      capacity: Number(data.capacity) || 0,
     };
     if (editingVehicle) {
-      // Update
+      // For updates, check duplicate only against OTHER vehicles
       const isDuplicate = vehicles.some(
         (v) =>
           v.registrationNumber.toLowerCase() === data.registrationNumber.toLowerCase() &&
@@ -138,7 +151,7 @@ export default function Vehicles() {
       }
       updateMutation.mutate({ id: editingVehicle.id, data: payload });
     } else {
-      // Create
+      // Create — check for any duplicate
       const isDuplicate = vehicles.some(
         (v) => v.registrationNumber.toLowerCase() === data.registrationNumber.toLowerCase()
       );
@@ -150,6 +163,7 @@ export default function Vehicles() {
     }
     setIsModalOpen(false);
   };
+
 
   // Confirm Delete
   const handleConfirmDelete = () => {

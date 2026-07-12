@@ -24,7 +24,7 @@ const driverSchema = z.object({
       /^[A-Z0-9][-A-Z0-9\s]{4,28}$/,
       'Only uppercase letters, numbers and dashes allowed (e.g. MH-12-12345678)'
     ),
-  licenseCategory: z.string().min(1, 'License Category is required'),
+  licenseCategory: z.string().optional(),
   licenseExpiry: z
     .string()
     .min(1, 'License Expiry Date is required')
@@ -36,10 +36,11 @@ const driverSchema = z.object({
     }, {
       message: 'License expiry must be a future date',
     }),
-  phone: z.string().min(10, 'Contact number must be at least 10 digits'),
-  safetyScore: z.coerce.number().min(0, 'Min score is 0').max(100, 'Max score is 100'),
+  phone: z.string().optional(),
+  safetyScore: z.coerce.number().min(0).max(100).optional().default(100),
   status: z.enum(['AVAILABLE', 'ON_TRIP', 'OFF_DUTY', 'SUSPENDED']),
 });
+
 
 export default function Drivers() {
   const queryClient = useQueryClient();
@@ -134,18 +135,34 @@ export default function Drivers() {
   // Open Modal for Edit
   const handleEditClick = (driver) => {
     setEditingDriver(driver);
-    reset(driver);
+    // Provide safe defaults for fields that backend doesn't return
+    const expiryDate = driver.licenseExpiry
+      ? driver.licenseExpiry.split('T')[0]
+      : '';
+    reset({
+      name: driver.name || '',
+      licenseNumber: driver.licenseNumber || '',
+      licenseCategory: driver.licenseCategory || 'Heavy Vehicle (Class A)',
+      licenseExpiry: expiryDate,
+      phone: driver.phone || '',
+      safetyScore: driver.safetyScore ?? 100,
+      status: driver.status || 'AVAILABLE',
+    });
     setIsModalOpen(true);
   };
 
+
   // Save Driver
   const onSave = (data) => {
+    // Only send fields that the backend actually stores
     const payload = {
-      ...data,
+      name: data.name,
+      licenseNumber: data.licenseNumber,
+      status: data.status,
       licenseExpiry: new Date(data.licenseExpiry).toISOString(),
     };
     if (editingDriver) {
-      // Update
+      // Update — check duplicate only against OTHER drivers
       const isDuplicate = drivers.some(
         (d) =>
           d.licenseNumber.toLowerCase() === data.licenseNumber.toLowerCase() &&
@@ -157,7 +174,8 @@ export default function Drivers() {
       }
       updateMutation.mutate({ id: editingDriver.id, data: payload });
     } else {
-      // Create
+      // Create — include extra fields for display but backend ignores unknown fields
+      const createPayload = { ...payload };
       const isDuplicate = drivers.some(
         (d) => d.licenseNumber.toLowerCase() === data.licenseNumber.toLowerCase()
       );
@@ -165,10 +183,11 @@ export default function Drivers() {
         toast.error('License number must be unique');
         return;
       }
-      createMutation.mutate(payload);
+      createMutation.mutate(createPayload);
     }
     setIsModalOpen(false);
   };
+
 
   // Confirm Delete
   const handleConfirmDelete = () => {
